@@ -48,7 +48,7 @@ add_subdirectory(bitdoglab_st7789)
 
 # Incorpora a biblioteca ao projeto
 target_link_libraries(${PROJECT_NAME}
-        bitdoglab_joystick
+        bitdoglab_st7789
         )
 ```
 
