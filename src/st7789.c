@@ -6,6 +6,7 @@
 #include "hardware/spi.h"
 
 #include <stdio.h>
+#include <string.h>
 
 uint16_t __rgb565(uint8_t r, uint8_t g, uint8_t b) {
     return ~(r << 11 | g  << 5 | b);
@@ -98,6 +99,31 @@ void _init_struct(st7789_t* display)
     display->is_partial = false;
 }
 
+void _fill_black() 
+{
+    uint16_t xe = ST7789_WIDTH - 1;
+    uint16_t ye = ST7789_HEIGHT - 1;
+    size_t total_pixels = ST7789_WIDTH * ST7789_HEIGHT;
+    uint8_t data_col[4] = { // bits de coluna
+        0x00, 0x00, xe >> 8, xe
+    };
+    uint8_t data_row[4] = { // bits de linha
+        0x00, 0x00, ye >> 8, ye
+    };
+    
+    // envia janela de desenho
+    _st7789_send_command(ST7789_CMD_CASET); 
+    _st7789_send_data(data_col, 4);
+    _st7789_send_command(ST7789_CMD_RASET);
+    _st7789_send_data(data_row, 4);
+    // inicia a escrita de dados
+    _st7789_send_command(ST7789_CMD_RAMWR);
+    // Preenche o buffer com a color preta
+    uint8_t color_data[2 * total_pixels];
+    memset(color_data, 0xff, 2 * total_pixels);
+    _st7789_send_data(color_data, 2 * total_pixels);
+}
+
 // Inicializa o display
 void st7789_init(st7789_t* display)
 {
@@ -122,6 +148,8 @@ void st7789_init(st7789_t* display)
     // Define o modo de cor como 16 bits
     _st7789_send_command(ST7789_CMD_COLMOD);
     _st7789_send_byte(0x55);
+    // Preenche de preto antes de ligar o display
+    _fill_black();
     // Liga o display
     _st7789_send_command(ST7789_CMD_DISPON);
 }
@@ -211,6 +239,14 @@ void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, u
     }
     // Envia os dados de cor para todos os pixels do retângulo
     _st7789_send_data(color_data, 2 * total_pixels);
+}
+
+/**
+ * 
+ */
+void st7789_fill(st7789_t* display, st7789_color_t color)
+{
+    st7789_drawRect(display, 0, ST7789_WIDTH - 1, 0, ST7789_HEIGHT - 1, color);
 }
 
 
