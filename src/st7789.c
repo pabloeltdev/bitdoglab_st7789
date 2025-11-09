@@ -7,7 +7,9 @@
 
 #include <stdio.h>
 
-#define RGB565(r,g,b) (~(((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F)) & 0xFFFF)
+uint16_t __rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return ~(r << 11 | g  << 5 | b);
+}
 
 // Liga a luz de fundo do display
 void _st7789_set_backlight(bool is_on)
@@ -117,7 +119,7 @@ void st7789_init(st7789_t* display)
     _st7789_set_backlight(true);
     // Saída do modo de sono
     _st7789_send_command(ST7789_CMD_SLPOUT);
-    // Modo de cor: 16-bit
+    // Define o modo de cor como 16 bits
     _st7789_send_command(ST7789_CMD_COLMOD);
     _st7789_send_byte(0x55);
     // Liga o display
@@ -161,6 +163,56 @@ void st7789_wake(st7789_t* display)
     display->is_sleeping = false;
     busy_wait_ms(120);
 }
+
+/**
+ * Desenha um retângulo delimitado pelos pontos ({xs}, {ys}) e ({xe}, {ye}) com a cor {color}
+ * {xs} - coordenada x inicial
+ * {xe} - coordenada x final
+ * {ys} - coordenada y inicial
+ * {ye} - coordenada y final
+ * {color} - cor do retângulo no formato RGB565
+ */
+void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye, st7789_color_t color)
+{
+    // Corta o conteúdo fora dos limites do display
+    const uint16_t LX = ST7789_WIDTH - 1;
+    const uint16_t LY = ST7789_HEIGHT - 1;
+    size_t width = xe - xs + 1;
+    size_t height = ye - ys + 1;
+    if (xs < 0) xs = 0;
+    if (ys < 0) ys = 0;
+    if (xe > LX) xe = LX;
+    if (ye > LY) ye = LY;
+    if (xs > xe || ys > ye) return;
+    
+    // Declara os dados de configuração da janela de desenho
+    uint8_t data_col[4] = { // bits de coluna
+        xs >> 8, xs,
+        xe >> 8, xe
+    };
+    uint8_t data_row[4] = { // bits de linha
+        ys >> 8, ys,
+        ye >> 8, ye
+    };
+    // envia janela de desenho
+    _st7789_send_command(ST7789_CMD_CASET); 
+    _st7789_send_data(data_col, 4);
+    _st7789_send_command(ST7789_CMD_RASET);
+    _st7789_send_data(data_row, 4);
+    // inicia a escrita de dados
+    _st7789_send_command(ST7789_CMD_RAMWR);
+    // Prepara os dados de cor
+    size_t total_pixels = width * height;
+    uint16_t color565 = __rgb565(color.r, color.g, color.b);
+    uint8_t color_data[2 * total_pixels];
+    for (size_t i = 0; i < total_pixels; i++) {
+        color_data[2 * i] = color565 >> 8;
+        color_data[2 * i + 1] = color565;
+    }
+    // Envia os dados de cor para todos os pixels do retângulo
+    _st7789_send_data(color_data, 2 * total_pixels);
+}
+
 
 // Desenha um pixel na posição ({x}, {y}) com a cor {color}
 void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, uint16_t color)
