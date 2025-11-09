@@ -251,6 +251,7 @@ void st7789_fill(st7789_t* display, st7789_color_t color)
 
 
 // Desenha um pixel na posição ({x}, {y}) com a cor {color}
-void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, uint16_t color)
+void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, st7789_color_t color)
 {
+    st7789_drawRect(display, x, x, y, y, color);
 }

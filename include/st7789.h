@@ -33,6 +33,6 @@ void st7789_sleep(st7789_t* display);
 void st7789_wake(st7789_t* display);
 void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye, st7789_color_t color);
 void st7789_fill(st7789_t* display, st7789_color_t color);
-void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, uint16_t color);
+void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, st7789_color_t color);
 
 #endif // ST7789_H
