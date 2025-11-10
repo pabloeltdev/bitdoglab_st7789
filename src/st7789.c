@@ -8,6 +8,13 @@
 #include <stdio.h>
 #include <string.h>
 
+struct st7789_t {
+    bool is_sleeping;
+    bool is_idle;
+    bool is_partial;
+    bool is_inverted;
+};
+
 uint16_t __rgb565(uint8_t r, uint8_t g, uint8_t b) {
     return r << 11 | g  << 5 | b;
 }
@@ -92,7 +99,7 @@ void _spi_init_pins()
     gpio_put(ST7789_CS_PIN, 1);
 }
 
-void _init_struct(st7789_t* display, bool invert)
+void _init_struct(st7789_t display, bool invert)
 {
     display->is_sleeping = false;
     display->is_idle = false;
@@ -154,7 +161,7 @@ void _fill_empty()
 }
 
 // Inicializa o display
-void st7789_init(st7789_t* display, bool invert)
+void st7789_init(st7789_t display, bool invert)
 {
     // Inicializa a estrutura de estado
     _init_struct(display, invert);
@@ -188,7 +195,7 @@ void st7789_init(st7789_t* display, bool invert)
 }
 
 // Faz um reset de software no display (seção 9.1.2 do datasheet)
-void st7789_reset(st7789_t* display)
+void st7789_reset(st7789_t display)
 {
     // Envia o comando de reset de software
     _st7789_send_command(ST7789_CMD_SWRESET);
@@ -201,14 +208,14 @@ void st7789_reset(st7789_t* display)
     }
 }
 
-void st7789_inversion_on(st7789_t* display)
+void st7789_inversion_on(st7789_t display)
 {
     if (display->is_inverted) return;
     _st7789_send_command(ST7789_CMD_INVON);
     display->is_inverted = true;
 }
 
-void st7789_inversion_off(st7789_t* display)
+void st7789_inversion_off(st7789_t display)
 {
     if (!display->is_inverted) return;
     _st7789_send_command(ST7789_CMD_INVOFF);
@@ -216,7 +223,7 @@ void st7789_inversion_off(st7789_t* display)
 }
 
 // Coloca o display em modo de sono (seção 9.1.11 do datasheet)
-void st7789_sleep(st7789_t* display)
+void st7789_sleep(st7789_t display)
 {
     if (display->is_sleeping) {
         return;
@@ -228,7 +235,7 @@ void st7789_sleep(st7789_t* display)
 }
 
 // Desperta o display do modo de sono (seção 9.1.12 do datasheet)
-void st7789_wake(st7789_t* display)
+void st7789_wake(st7789_t display)
 {
     if (!display->is_sleeping) {
         return;
@@ -247,7 +254,7 @@ void st7789_wake(st7789_t* display)
  * {ye} - coordenada y final
  * {color} - cor do retângulo no formato RGB565
  */
-void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye, st7789_color_t color)
+void st7789_drawRect(st7789_t display, uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye, st7789_color_t color)
 {
     // Define a janela de desenho
     _frame(xs, xe, ys, ye);
@@ -270,18 +277,18 @@ void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, u
 /**
  * 
  */
-void st7789_fill(st7789_t* display, st7789_color_t color)
+void st7789_fill(st7789_t display, st7789_color_t color)
 {
     st7789_drawRect(display, 0, ST7789_WIDTH - 1, 0, ST7789_HEIGHT - 1, color);
 }
 
 // Desenha um pixel na posição ({x}, {y}) com a cor {color}
-void st7789_drawPixel(st7789_t* display, uint16_t x, uint16_t y, st7789_color_t color)
+void st7789_drawPixel(st7789_t display, uint16_t x, uint16_t y, st7789_color_t color)
 {
     st7789_drawRect(display, x, x, y, y, color);
 }
 
-void st7789_drawBitmap(st7789_t* display, uint16_t xs, uint16_t ys, uint16_t width, uint16_t height, st7789_bitmap_t bitmap)
+void st7789_drawBitmap(st7789_t display, uint16_t xs, uint16_t ys, uint16_t width, uint16_t height, st7789_bitmap_t bitmap)
 {
     uint16_t xe = xs + width - 1, ye = height - 1;
     uint32_t total_pixels = width * height;
