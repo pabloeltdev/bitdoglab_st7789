@@ -2,6 +2,7 @@
 #include "pins.h"
 #include "cmds.h"
 #include "error.h"
+#include "test.h"
 
 #include "hardware/spi.h"
 
@@ -160,6 +161,24 @@ void _fill_empty()
     _st7789_send_data(color_data, 2 * total_pixels);
 }
 
+void _st7789_draw_char(st7789_t display) {
+    uint8_t buffer[12*8*2];
+    uint16_t color = __rgb565(255, 0, 0);
+    for (size_t i = 0; i < 12; i++)
+    {
+        // Bit a bit converted
+        for (size_t b = 0; b < 8; b++)
+        {
+            const uint8_t byte = st7789_font_test[0][i];
+            bool bit = byte >> i & 0b00000001;
+            buffer[16*i+2*b] = 0xff;
+            buffer[16*i+2*b+1] = 0xff;
+        }
+    }
+    st7789_drawBitmap(display, 0, 0, 8, 12, buffer);
+
+}
+
 // Inicializa o display
 void st7789_init(st7789_t display, bool invert)
 {
@@ -192,7 +211,9 @@ void st7789_init(st7789_t display, bool invert)
     }
     // Liga o display
     _st7789_send_command(ST7789_CMD_DISPON);
+    _st7789_draw_char(display);
 }
+
 
 // Faz um reset de software no display (seção 9.1.2 do datasheet)
 void st7789_reset(st7789_t display)

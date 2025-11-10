@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} src/st7789.c)
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/fonts
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
