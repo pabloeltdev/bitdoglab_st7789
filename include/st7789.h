@@ -30,7 +30,7 @@ typedef struct
 
 typedef const uint8_t st7789_bitmap_t[];
 
-void st7789_init(st7789_t* display);
+void st7789_init(st7789_t* display, bool invert);
 void st7789_reset(st7789_t* display);
 void st7789_inversion_on(st7789_t* display);
 void st7789_inversion_off(st7789_t* display);

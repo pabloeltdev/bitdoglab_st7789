@@ -9,7 +9,7 @@
 #include <string.h>
 
 uint16_t __rgb565(uint8_t r, uint8_t g, uint8_t b) {
-    return ~(r << 11 | g  << 5 | b);
+    return r << 11 | g  << 5 | b;
 }
 
 // Liga a luz de fundo do display
@@ -92,12 +92,12 @@ void _spi_init_pins()
     gpio_put(ST7789_CS_PIN, 1);
 }
 
-void _init_struct(st7789_t* display)
+void _init_struct(st7789_t* display, bool invert)
 {
     display->is_sleeping = false;
     display->is_idle = false;
     display->is_partial = false;
-    display->is_inverted = false;
+    display->is_inverted = invert;
 }
 
 void _frame(uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye) {
@@ -128,7 +128,7 @@ void _frame(uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye) {
     _st7789_send_data(data_row, 4);
 }
 
-void _fill_black() 
+void _fill_empty() 
 {
     uint16_t xe = ST7789_WIDTH - 1;
     uint16_t ye = ST7789_HEIGHT - 1;
@@ -149,15 +149,15 @@ void _fill_black()
     _st7789_send_command(ST7789_CMD_RAMWR);
     // Preenche o buffer com a color preta
     uint8_t color_data[2 * total_pixels];
-    memset(color_data, 0xff, 2 * total_pixels);
+    memset(color_data, 0x00, 2 * total_pixels);
     _st7789_send_data(color_data, 2 * total_pixels);
 }
 
 // Inicializa o display
-void st7789_init(st7789_t* display)
+void st7789_init(st7789_t* display, bool invert)
 {
     // Inicializa a estrutura de estado
-    _init_struct(display);
+    _init_struct(display, invert);
     // Inicializa a SPI
     spi_init(ST7789_SPI_INSTANCE, ST7789_SPI_BAUDRATE * FREQ_MHZ);
     // Define os pinos de função SPI 
@@ -178,7 +178,11 @@ void st7789_init(st7789_t* display)
     _st7789_send_command(ST7789_CMD_COLMOD);
     _st7789_send_byte(0x55);
     // Preenche de preto antes de ligar o display
-    _fill_black();
+    _fill_empty();
+    // Inverte as cores do display caso solicitado
+    if (display->is_inverted) {
+        _st7789_send_command(ST7789_CMD_INVON);
+    }
     // Liga o display
     _st7789_send_command(ST7789_CMD_DISPON);
 }
