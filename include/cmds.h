@@ -9,6 +9,8 @@
 #define ST7789_CMD_SLPOUT     0x11
 #define ST7789_CMD_PTLON      0x12
 #define ST7789_CMD_NORON      0x13
+#define ST7789_CMD_INVOFF     0x20
+#define ST7789_CMD_INVON      0x21
 #define ST7789_CMD_DISPOFF    0x28
 #define ST7789_CMD_DISPON     0x29
 #define ST7789_CMD_CASET      0x2A

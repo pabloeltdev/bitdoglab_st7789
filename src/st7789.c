@@ -97,6 +97,35 @@ void _init_struct(st7789_t* display)
     display->is_sleeping = false;
     display->is_idle = false;
     display->is_partial = false;
+    display->is_inverted = false;
+}
+
+void _frame(uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye) {
+        // Corta o conteúdo fora dos limites do display
+    const uint16_t LX = ST7789_WIDTH - 1;
+    const uint16_t LY = ST7789_HEIGHT - 1;
+    size_t width = xe - xs + 1;
+    size_t height = ye - ys + 1;
+    if (xs < 0) xs = 0;
+    if (ys < 0) ys = 0;
+    if (xe > LX) xe = LX;
+    if (ye > LY) ye = LY;
+    if (xs > xe || ys > ye) return;
+    
+    // Declara os dados de configuração da janela de desenho
+    uint8_t data_col[4] = { // bits de coluna
+        xs >> 8, xs,
+        xe >> 8, xe
+    };
+    uint8_t data_row[4] = { // bits de linha
+        ys >> 8, ys,
+        ye >> 8, ye
+    };
+    // envia janela de desenho
+    _st7789_send_command(ST7789_CMD_CASET); 
+    _st7789_send_data(data_col, 4);
+    _st7789_send_command(ST7789_CMD_RASET);
+    _st7789_send_data(data_row, 4);
 }
 
 void _fill_black() 
@@ -168,6 +197,20 @@ void st7789_reset(st7789_t* display)
     }
 }
 
+void st7789_inversion_on(st7789_t* display)
+{
+    if (display->is_inverted) return;
+    _st7789_send_command(ST7789_CMD_INVON);
+    display->is_inverted = true;
+}
+
+void st7789_inversion_off(st7789_t* display)
+{
+    if (!display->is_inverted) return;
+    _st7789_send_command(ST7789_CMD_INVOFF);
+    display->is_inverted = false;
+}
+
 // Coloca o display em modo de sono (seção 9.1.11 do datasheet)
 void st7789_sleep(st7789_t* display)
 {
@@ -202,34 +245,13 @@ void st7789_wake(st7789_t* display)
  */
 void st7789_drawRect(st7789_t* display, uint16_t xs, uint16_t xe, uint16_t ys, uint16_t ye, st7789_color_t color)
 {
-    // Corta o conteúdo fora dos limites do display
-    const uint16_t LX = ST7789_WIDTH - 1;
-    const uint16_t LY = ST7789_HEIGHT - 1;
-    size_t width = xe - xs + 1;
-    size_t height = ye - ys + 1;
-    if (xs < 0) xs = 0;
-    if (ys < 0) ys = 0;
-    if (xe > LX) xe = LX;
-    if (ye > LY) ye = LY;
-    if (xs > xe || ys > ye) return;
-    
-    // Declara os dados de configuração da janela de desenho
-    uint8_t data_col[4] = { // bits de coluna
-        xs >> 8, xs,
-        xe >> 8, xe
-    };
-    uint8_t data_row[4] = { // bits de linha
-        ys >> 8, ys,
-        ye >> 8, ye
-    };
-    // envia janela de desenho
-    _st7789_send_command(ST7789_CMD_CASET); 
-    _st7789_send_data(data_col, 4);
-    _st7789_send_command(ST7789_CMD_RASET);
-    _st7789_send_data(data_row, 4);
-    // inicia a escrita de dados
+    // Define a janela de desenho
+    _frame(xs, xe, ys, ye);
+    // Inicia a escrita de dados
     _st7789_send_command(ST7789_CMD_RAMWR);
     // Prepara os dados de cor
+    size_t width = xe - xs + 1;
+    size_t height = ye - ys + 1;
     size_t total_pixels = width * height;
     uint16_t color565 = __rgb565(color.r, color.g, color.b);
     uint8_t color_data[2 * total_pixels];
@@ -249,9 +271,20 @@ void st7789_fill(st7789_t* display, st7789_color_t color)
     st7789_drawRect(display, 0, ST7789_WIDTH - 1, 0, ST7789_HEIGHT - 1, color);
 }
 
-
 // Desenha um pixel na posição ({x}, {y}) com a cor {color}
-void st7789_drawPixel(st7789_t* display, int16_t x, int16_t y, st7789_color_t color)
+void st7789_drawPixel(st7789_t* display, uint16_t x, uint16_t y, st7789_color_t color)
 {
     st7789_drawRect(display, x, x, y, y, color);
+}
+
+void st7789_drawBitmap(st7789_t* display, uint16_t xs, uint16_t ys, uint16_t width, uint16_t height, st7789_bitmap_t bitmap)
+{
+    uint16_t xe = xs + width - 1, ye = height - 1;
+    uint32_t total_pixels = width * height;
+    // Define a janela de desenho
+    _frame(xs, xe, ys, ye);
+    // Inicia a escrita de dados
+    _st7789_send_command(ST7789_CMD_RAMWR);
+    // Envia envia o bitmap completo
+    _st7789_send_data((uint8_t*) bitmap, 2 * total_pixels);
 }
