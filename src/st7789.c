@@ -209,7 +209,6 @@ void st7789_init(st7789_t display, bool invert)
     }
     // Liga o display
     _st7789_send_command(ST7789_CMD_DISPON);
-    _st7789_draw_char(display);
 }
 
 
