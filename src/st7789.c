@@ -203,8 +203,6 @@ void st7789_init(st7789_t display, bool invert)
     // Define o modo de cor como 16 bits
     _st7789_send_command(ST7789_CMD_COLMOD);
     _st7789_send_byte(0x55);
-    // Preenche de preto antes de ligar o display
-    _fill_empty();
     // Inverte as cores do display caso solicitado
     if (display->is_inverted) {
         _st7789_send_command(ST7789_CMD_INVON);
